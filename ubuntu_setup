@@ -1,0 +1,136 @@
+#!/bin/bash
+
+#config
+VIM_TAGBAR="yes"
+VIM_AUTO_PAIRS="yes"
+
+#check root
+SUDO=""
+if [ $(id -u) -gt 0 ];then
+	SUDO="sudo"
+fi
+DIR="$(readlink -f ~)"
+BASHRC="$DIR/.bashrc"
+BASH_CUSTOM="$DIR/.bash_custom"
+VIMRC="$DIR/.vimrc"
+VIM_PLUGIN="$DIR/.vim"
+
+INSTALL="$SUDO apt install -y"
+
+function install_app ()
+{
+	APP_NAME="$1"
+	APP_INSTALL_NAME="$1"
+	if [ "$2" != "" ]; then
+		APP_INSTALL_NAME="$2"
+	fi
+	echo ">>> $APP_NAME checking..."
+	if [ "$(which $APP_NAME)" = "" ]; then
+		$INSTALL $APP_INSTALL_NAME > /dev/null
+		if [ $? -gt 0 ]; then
+			echo ">>> Failed to install $APP_NAME"
+			exit
+		fi
+	fi
+}
+
+#vim install
+install_app vim
+#git install
+install_app git
+#curl install
+install_app curl
+#byobu install
+install_app byobu
+
+
+#update .vim directory
+UPDATE_VIM_DIR="yes"
+if [ -d "$VIM_PLUGIN" ]; then
+	echo "Old .vim directory exist. Do you want to replace new one? [y/n]"
+	read -n1 select
+	if [ "$select" = "y" ]; then
+		echo "Old .vim directory is moved to .bk_vim"
+		mv $VIM_PLUGIN $DIR/.bk_vim
+	elif [ "$select" = "n" ]; then
+		UPDATE_VIM_DIR="no"
+	else
+		echo "Please select character in provided action. Please re-run script"
+		exit
+	fi
+fi
+if [ "$UPDATE_VIM_DIR" = "yes" ]; then
+	mkdir -p $VIM_PLUGIN/autoload $VIM_PLUGIN/bundle && \
+		curl -LSso $VIM_PLUGIN/autoload/pathogen.vim https://tpo.pe/pathogen.vim > /dev/null
+	if [ "$VIM_TAGBAR" = "yes" ]; then
+		git clone https://github.com/preservim/tagbar.git $VIM_PLUGIN/bundle/tagbar > /dev/null
+	fi
+	if [ "$VIM_AUTO_PAIRS" = "yes" ]; then
+		git clone https://github.com/jiangmiao/auto-pairs.git $VIM_PLUGIN/bundle/auto-pairs > /dev/null
+	fi
+fi
+
+#update .vimrc
+UPDATE_VIMRC="yes"
+if [ -f "$VIMRC" ]; then
+	echo "Old .vimrc file exist. Do you want to replace new one? [y/n]"
+	read -n1 select
+	if [ "$select" = "y" ]; then
+		echo "Old .vimrc file is moved to .bk_vimrc"
+		mv $VIMRC $DIR/.bk_vimrc
+	elif [ "$select" = "n" ]; then
+		UPDATE_VIMRC="no"
+	else
+		echo "Please select character in provided action. Please re-run script"
+		exit
+	fi
+fi
+if [ "$UPDATE_VIMRC" = "yes" ]; then
+	echo "\"For pathogen. Refer https://github.com/tpope/vim-pathogen" > $VIMRC
+	echo "execute pathogen#infect()" >> $VIMRC
+	echo "syntax on" >> $VIMRC
+	echo "filetype plugin indent on" >> $VIMRC
+	#set highlight
+	echo "" >> $VIMRC
+	echo "\"Set highlight search" >> $VIMRC
+	echo "set hlsearch" >> $VIMRC
+	echo "hi Search ctermbg=Yellow" >> $VIMRC
+	echo "hi Search ctermfg=Black" >> $VIMRC
+	#set line number
+	echo "" >> $VIMRC
+	echo "\"Set line number" >> $VIMRC
+	echo "set number" >> $VIMRC
+
+	if [ "$VIM_TAGBAR" = "yes" ]; then
+		echo "" >> $VIMRC
+		echo "\"Setup tagbar plugin" >> $VIMRC
+		echo "nnoremap <silent> <C-f> :TagbarToggle<CR>" >> $VIMRC
+	fi
+fi
+
+#create .bash_custom
+[ -f $BASH_CUSTOM ] && rm $BASH_CUSTOM
+cat <<EOF > $BASH_CUSTOM
+if [ "\$(which tput)" != "" ];then
+	_GREEN=\$(tput setaf 2)
+	_YELLOW=\$(tput setaf 3)
+	_BLUE=\$(tput setaf 4)
+	_RED=\$(tput setaf 1)
+	_RESET=\$(tput sgr0)
+	_BOLD=\$(tput bold)
+	PS1="\${_GREEN}\u\${_BLUE}@\${_RED}\h\${_BLUE}:\${_YELLOW}\w\${_RESET}\n--> \$ "
+else
+	PS1="\e[0;32m\u\e[0;34m@\e[0;31m\h\e[0;34m:\e[0;35m\w\e[m\n--> \$ "
+fi
+alias add_dir='pushd -n'
+alias list_dir='dirs -v -l'
+alias jump_dir='pushd '
+EOF
+#update .bashrc
+if [ "$(grep "/\.bash_custom" $BASHRC)" = "" ]; then
+	echo "" >> $BASHRC
+	echo "# add custom bash" >> $BASHRC
+	echo "[ -f $BASH_CUSTOM ] && source $BASH_CUSTOM" >> $BASHRC
+fi
+echo "+++++++++++++++++++"
+source $BASHRC
