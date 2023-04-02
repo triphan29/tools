@@ -134,15 +134,17 @@ function install_default_services()
 {
 	#vim install
 	install_app vim
-	vim_setup
 	#curl install
 	install_app curl
 	#byobu install
 	install_app byobu
 	#ctags install
 	install_app universal-ctags
+	#vim setup
+	vim_setup
+	#bash setup
+	bash_setup
 }
 
 install_default_services
-bash_setup
 
