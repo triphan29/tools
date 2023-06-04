@@ -3,6 +3,7 @@
 #config
 VIM_TAGBAR="yes"
 VIM_AUTO_PAIRS="yes"
+VIM_GO="no"
 
 #check root
 SUDO=""
@@ -61,6 +62,9 @@ function vim_setup ()
 					if [ "$VIM_AUTO_PAIRS" = "yes" ]; then
 						git clone https://github.com/jiangmiao/auto-pairs.git $VIM_PLUGIN/bundle/auto-pairs > /dev/null
 					fi
+					if [ "$VIM_GO" = "yes" ]; then
+						git clone https://github.com/fatih/vim-go.git $VIM_PLUGIN/bundle/vim-go > /dev/null
+					fi
 	fi
 	#update .vimrc
 	UPDATE_VIMRC="yes"
@@ -81,6 +85,7 @@ function vim_setup ()
 		echo "\"For pathogen. Refer https://github.com/tpope/vim-pathogen" > $VIMRC
 		echo "execute pathogen#infect()" >> $VIMRC
 		echo "syntax on" >> $VIMRC
+		echo "filetype plugin on" >> $VIMRC
 		echo "filetype plugin indent on" >> $VIMRC
 		#set highlight
 		echo "" >> $VIMRC
@@ -88,15 +93,23 @@ function vim_setup ()
 		echo "set hlsearch" >> $VIMRC
 		echo "hi Search ctermbg=Yellow" >> $VIMRC
 		echo "hi Search ctermfg=Black" >> $VIMRC
+		echo "map <esc> :noh<CR>" >> $VIMRC
 		#set line number
 		echo "" >> $VIMRC
 		echo "\"Set line number" >> $VIMRC
 		echo "set number" >> $VIMRC
+		echo "\"For [in]sensitive search" >> $VIMRC
+		echo "set ignorecase" >> $VIMRC
+		echo "set smartcase" >> $VIMRC
 
 		if [ "$VIM_TAGBAR" = "yes" ]; then
 			echo "" >> $VIMRC
 			echo "\"Setup tagbar plugin" >> $VIMRC
 			echo "nnoremap <silent> <C-f> :TagbarToggle<CR>" >> $VIMRC
+		fi
+		if [ "$VIM_GO" = "yes" ]; then
+			echo "\"For Go" >> $VIMRC
+			echo "nmap gi :GoImplements<CR>" >> $VIMRC
 		fi
 	fi
 }

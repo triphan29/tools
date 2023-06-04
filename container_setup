@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if [ -z $(pidof dockerd) ];then
+	echo "Please install docker package"
+	exit
+fi
+
+IMAGE_NAME="generic"
+
+if [ -z "$(sudo docker images | grep ${IMAGE_NAME})" ];then
+	echo "Building $IMAGE_NAME image"
+
+	#Check dockerfile exist
+	if [ ! -f $(pwd)/Dockerfile ]; then
+		echo "Dockerfile not found"
+		exit
+	fi
+
+	#Build image
+	sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t $IMAGE_NAME .
+fi
+
+CONTAINER_NAME="$(whoami)_container"
+
+if [ -n "$1" ];then
+	CONTAINER_NAME="$1"
+fi
+
+if [ -z "$(sudo docker ps -a | grep $CONTAINER_NAME)" ];then
+	echo "Creating container $CONTAINER_NAME"
+	sudo docker run -it --name $CONTAINER_NAME $IMAGE_NAME /bin/bash
+else
+	echo "Container $CONTAINER_NAME exist"
+	sudo docker ps -a | grep $CONTAINER_NAME
+fi
+
